@@ -17,12 +17,15 @@
         "48": "icons/48x48.png",
         "128": "icons/128x128.png"
     },
+    "permissions": [
+        "storage"
+    ],
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "js/background.js"
     },
     "content_scripts": [
         {
-          "matches": ["https://*.com/*"],
+          "matches": ["<all_urls>"],
           "js": ["js/contentScript.js"]
         }
     ]

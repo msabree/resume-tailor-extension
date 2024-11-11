@@ -1,5 +1,6 @@
 const path = require("path");
 const Dotenv = require("dotenv-webpack");
+const webpack = require('webpack');
 const HTMLPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
@@ -35,6 +36,10 @@ module.exports = {
     },
     plugins: [
         new Dotenv(),
+        new webpack.ProvidePlugin({
+            process: 'process/browser', // Make process globally available
+            Buffer: ['buffer', 'Buffer']
+          }),
         new CopyPlugin({
             patterns: [
                 { 
@@ -52,9 +57,10 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"],
         fallback: {
-            assert: false,
-            util: false,
-            console: false,
+            assert: require.resolve("assert/"),
+            stream: require.resolve('stream-browserify'),
+            process: require.resolve('process/browser'),
+            buffer: require.resolve('buffer/'),
         },
     },
     output: {
