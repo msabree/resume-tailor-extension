@@ -8,7 +8,7 @@ import Popover from '@mui/material/Popover/Popover';
 import Button from '@mui/material/Button/Button';
 import DragHandle from '../DragHandle/DragHandle';
 import { Box, Tabs, Tab, CircularProgress } from '@mui/material';
-import InterviewPrep from '../InterviewPrep/InterviewPrep';
+import CoverLetterGenerator from '../CoverLetterGenerator/CoverLetterGenerator';
 import "./styles.css";
 import { getResume } from '../../utils/messaging';
 
@@ -25,6 +25,7 @@ const ContentScript = () => {
     const [jobInfo, setJobInfo] = useState("")
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
+    const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
     const [open, setOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -65,7 +66,7 @@ const ContentScript = () => {
         }
     }
 
-    const summarizeJobDescription = (resume: string) => {
+    const enhanceResume = (resume: string) => {
         if (jobInfo !== "false") {
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
@@ -81,6 +82,9 @@ const ContentScript = () => {
                 4. Ensure the resume format and language are aligned with the job description (e.g., use of keywords, job-specific jargon, etc.).
                 5. Provide the modified resume in HTML format, maintaining the structure and readability.
                 
+                Do not include placeholders (inside sqaure brackets) or any missing details; either fully 
+                populate the fields or omit them if not available.
+
                 Job Description (HTML format): ${jobInfo}
 
                 Resume (HTML format): ${resume}
@@ -100,6 +104,38 @@ const ContentScript = () => {
         }
     }
 
+    const generateCoverLetter = () => {
+        if (jobInfo !== "false" && htmlResume !== "") {
+            setIsLoading(true)
+            const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+            const prompt = `
+                You are provided with a detailed job description and a resume in HTML format.
+                Please generate a cover letter based on the job description and the resume, 
+                pulling relevant contact information directly from the resume. Do not include 
+                placeholders (inside sqaure brackets) or any missing details; either fully 
+                populate the fields (name, phone number, etc.) or omit them if not available.
+
+                Job Description (HTML format): ${jobInfo}
+
+                Resume (HTML format): ${htmlResume}
+
+                Return only the cover letter in HTML format, without any additional commentary or text.
+            `;
+
+            model.generateContent(prompt).then((result) => {
+                setIsLoading(false)
+                const rawString = result.response.text();
+                console.log(rawString)
+                setCoverLetterHTML(rawString.trim())
+            }).catch((err) => {
+                setIsLoading(false)
+                console.log(err)
+            })
+        }
+    }
+
     useEffect(() => {
         checkForJobPosting()
     }, [])
@@ -107,8 +143,8 @@ const ContentScript = () => {
     useEffect(() => {
         if (jobInfo !== "false") {
             getResume().then((resume: string) => {
-                setHTMLResume(resume) // added to state in case we need it later... otherwise remove at will
-                summarizeJobDescription(resume)
+                setHTMLResume(resume)
+                enhanceResume(resume)
             }).catch((err) => {
                 console.log(err)
             })
@@ -154,6 +190,7 @@ const ContentScript = () => {
             </DndContext>
             <Popover
                 id={open ? 'simple-popover' : undefined}
+                style={{zIndex: 999999999}}
                 open={open}
                 anchorEl={anchorEl}
                 onClose={() => {
@@ -169,7 +206,7 @@ const ContentScript = () => {
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs value={tabIndex} onChange={(_evt: any, index: number) => setTabIndex(index)} aria-label="Clever Apply Tabs">
                             <Tab label="Resume Enhancer" sx={{ textTransform: 'none', fontSize: 16 }} />
-                            <Tab label="Interview Tips" sx={{ textTransform: 'none', fontSize: 16 }} />
+                            <Tab label="Cover Letter Generator" sx={{ textTransform: 'none', fontSize: 16 }} />
                         </Tabs>
                     </Box>
                     <CustomTabPanel value={tabIndex} index={0}>
@@ -187,7 +224,9 @@ const ContentScript = () => {
                         {enhancedResume && <div className='info' dangerouslySetInnerHTML={{__html: enhancedResume}} />}
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <InterviewPrep data={'foobar'} errorMessage={''} regenerate={() => { }} />
+                        <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
+                            generateCoverLetter()
+                        }} />
                     </CustomTabPanel>
                 </Box>
             </Popover>

@@ -1,18 +1,18 @@
-export type File_Type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' | 'application/msword'
+export type File_Type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 export const getFileArrayBuffer = (file: File): Promise<ArrayBuffer> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
         reader.onload = () => {
-            resolve(reader.result as ArrayBuffer); // Resolve the promise with the ArrayBuffer
+            resolve(reader.result as ArrayBuffer);
         };
 
         reader.onerror = () => {
             reject(new Error('Failed to read file as ArrayBuffer'));
         };
 
-        reader.readAsArrayBuffer(file); // Reads the file as an ArrayBuffer
+        reader.readAsArrayBuffer(file);
     });
 };
 

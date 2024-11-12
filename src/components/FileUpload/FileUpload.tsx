@@ -31,7 +31,7 @@ const FileUpload = ({onChange}: FileUploadProps) => {
         type="file"
         onChange={(event) => onChange(event.target.files)}
         multiple={false}
-        accept=".txt, .doc, .docx"
+        accept=".txt,.docx"
       />
     </Button>
   );
