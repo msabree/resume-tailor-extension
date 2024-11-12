@@ -66,7 +66,6 @@ module.exports = {
     output: {
         path: path.join(__dirname, "dist/js"),
         filename: "[name].js",
-        publicPath: "/"
     },
     externals: {
         canvg: "canvg",
