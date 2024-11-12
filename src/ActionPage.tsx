@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload/FileUpload';
 import { getFileArrayBuffer, serialize } from './utils/files';
 import { SAVE_RESUME_ACTION } from './constants';
 import { deleteResume, getResume } from './utils/messaging';
+import Logo from './icons/Logo'
 
 import './ActionPage.css'
 
@@ -36,7 +37,8 @@ const ActionPage = () => {
   return (
     <div className="App">
       <header className="App-header">
-        Welcome to Resume Tailor
+        <Logo width={64} height={64} fill={'#ffffff'} />
+        Resume Tailor
       </header>
       <div className='intro'>
         This extension uses Google Gemini AI to automatically 

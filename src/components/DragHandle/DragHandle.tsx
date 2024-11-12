@@ -1,16 +1,14 @@
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Badge } from '@mui/material';
-import DragHandleIcon from '../../icons/DragHandle';
+import Logo from '../../icons/Logo';
 import "./styles.css"
-import Logo from '../../icons/Logo.png'
 
 interface DragHandleProps {
   badgeCount: number
 }
 
 const DragHandle = ({ badgeCount }: DragHandleProps) => {
-  const logoSrc = '../'
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: 'draggable',
   });
@@ -22,7 +20,7 @@ const DragHandle = ({ badgeCount }: DragHandleProps) => {
   return (
     <div className="drag-handle" ref={setNodeRef} style={style} {...listeners} {...attributes}>
       <Badge badgeContent={badgeCount} color='warning' anchorOrigin={{ vertical: 'top', horizontal: 'left' }}>
-        <DragHandleIcon width={64} height={64} fill={'#ffffff'} />
+        <Logo width={64} height={64} fill={'#ffffff'} />
       </Badge>
     </div>
   )
