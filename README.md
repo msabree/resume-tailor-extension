@@ -1,6 +1,6 @@
-# Clever Apply - Chrome Extension
+# Resume Tailor - Chrome Extension
 
-The **Clever Apply** Chrome Extension uses Google Gemini AI to tailor your resume to any job description. It automatically generates a customized CV and can even auto-populate application fields for you.
+The **Resume Tailor** Chrome Extension uses Google Gemini AI to tailor your resume to any job description. It automatically generates a customized CV and can even auto-populate application fields for you.
 
 ## Table of Contents
 

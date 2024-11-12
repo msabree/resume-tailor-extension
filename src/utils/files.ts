@@ -1,3 +1,6 @@
+import html2canvas from "html2canvas";
+import jsPDF from 'jspdf';
+
 export type File_Type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 export const getFileArrayBuffer = (file: File): Promise<ArrayBuffer> => {
@@ -31,3 +34,22 @@ export const deserialize = (fileDataString: string): ArrayBuffer => {
 
     return uint8Array.buffer;
 };
+
+export const downloadAsPdf = (input: HTMLElement | null) => {
+    if (input) {
+        html2canvas(input)
+            .then((canvas) => {
+                console.log(canvas)
+                const pdf = new jsPDF();
+                pdf.html(input, {
+                    callback(doc) {
+                        doc.output("dataurlnewwindow")
+                    },
+                    x: 10,  // Optional x-position
+                    y: 10,  // Optional y-position
+                    width: 200,  // Set the content width (optional)
+                    windowWidth: 800
+                })
+            });
+    }
+}  

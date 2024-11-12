@@ -4,6 +4,6 @@ import ActionPage from './ActionPage';
 
 test('renders text with extension name', () => {
   render(<ActionPage />);
-  const cleaverApplyText = screen.getByText(/Clever Apply/i);
-  expect(cleaverApplyText).toBeInTheDocument();
+  const resumeTailorText = screen.getByText(/Resume Tailor/i);
+  expect(resumeTailorText).toBeInTheDocument();
 });

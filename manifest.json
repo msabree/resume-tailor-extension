@@ -1,11 +1,11 @@
 {
     "version": "1.0.0",
     "manifest_version": 3,
-    "name": "Clever Apply",
-    "description": "Clever Apply leverages Google Gemini to tailor your resume to match any job description. It auto-generates a customized CV and even populates application fields for you.",
+    "name": "Resume Tailor",
+    "description": "Resume Tailor uses Google Gemini to customize your resume for any job description. It automatically generates a personalized CV and populates application fields, saving you time and effort.",
     "action": {
         "default_popup": "js/index.html",
-        "default_title": "Clever Apply",
+        "default_title": "Resume Tailor",
         "default_icon": {
             "16": "icons/16x16.png",
             "48": "icons/48x48.png",

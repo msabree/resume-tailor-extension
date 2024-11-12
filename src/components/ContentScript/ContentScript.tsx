@@ -7,10 +7,11 @@ import {
 import Popover from '@mui/material/Popover/Popover';
 import Button from '@mui/material/Button/Button';
 import DragHandle from '../DragHandle/DragHandle';
-import { Box, Tabs, Tab, CircularProgress } from '@mui/material';
+import { Box, Tabs, Tab, CircularProgress, Divider } from '@mui/material';
 import CoverLetterGenerator from '../CoverLetterGenerator/CoverLetterGenerator';
 import "./styles.css";
 import { getResume } from '../../utils/messaging';
+import { downloadAsPdf } from '../../utils/files';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -57,7 +58,6 @@ const ContentScript = () => {
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const rawString = result.response.text();
-                console.log(rawString)
                 setJobInfo(rawString.trim())
             }).catch((err) => {
                 setIsLoading(false)
@@ -95,7 +95,7 @@ const ContentScript = () => {
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const rawString = result.response.text();
-                console.log(rawString)
+                // console.log(rawString)
                 setEnhancedResume(rawString.trim())
             }).catch((err) => {
                 setIsLoading(false)
@@ -127,13 +127,117 @@ const ContentScript = () => {
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const rawString = result.response.text();
-                console.log(rawString)
+                // console.log(rawString)
                 setCoverLetterHTML(rawString.trim())
             }).catch((err) => {
                 setIsLoading(false)
                 console.log(err)
             })
         }
+    }
+
+    const generateAutofillCommands = () => {
+        const pageInnerHTML = document.body.innerHTML
+        if (pageInnerHTML && htmlResume !== "") {
+            setIsLoading(true)
+            const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+            const prompt = `
+                You are given the innerHTML of a job listing page, along with a 
+                resume and cover letter. Please scan the HTML and identify all 
+                form input elements. Return **one array** of commands to populate 
+                these form fields with relevant data extracted from the resume 
+                and cover letter. Only populate fields that can be set from the 
+                provided documents (e.g., name, contact information, work experience, 
+                skills, cover letter content). Any items that cannot be filled based on 
+                the resume or cover letter should be omitted.
+
+                The information you'll be provided includes:
+
+                INNER HTML OF PAGE: ${pageInnerHTML}
+                RESUME: ${htmlResume}
+                COVER LETTER: ${coverLetterHTML}
+
+                Return one array with commands like: document.getElementById("inputId").value = "exampleValue";
+
+                PLEASE RETURN A VALID STRINGIFIED ARRAY THAT I CAN USE JSON.PARSE ON
+
+                DO NOT INCLUDE ANY EXPLANATION, ONLY RETURN THE ARRAY.
+            `;
+
+            model.generateContent(prompt).then((result) => {
+                setIsLoading(false)
+                const aiResponseRawText = result.response.text();
+                if (aiResponseRawText.includes('```json')) {
+                    // parse out the html
+                    const firstPart = aiResponseRawText.split("```json")[1]
+                    const jsonStringOnly = firstPart.split("```")[0]
+                    console.log(jsonStringOnly)
+                    try {
+                        const commands = JSON.parse(jsonStringOnly)
+                        console.log("COMMANDS", commands)
+                        commands.forEach((command: any) => {
+                            // Split the command string into parts (e.g., get element and set value)
+                            const match = command.match(/document\.getElementById\(["']([^"']+)["']\)\.value = ["']([^"']+)["']/);
+
+                            if (match) {
+                                const elementId = match[1];
+                                const value = match[2];
+
+                                const element = document.getElementById(elementId) as HTMLInputElement;
+                                if (element) {
+                                    element.value = value; // Set the value
+                                } else {
+                                    console.log(`Element with ID ${elementId} not found.`);
+                                }
+                            }
+                        });
+                    } catch (e) {
+                        console.log(e)
+                    }
+                } else {
+                    // console.log(aiResponseRawText)
+                    try {
+                        const commands = JSON.parse(aiResponseRawText)
+                        console.log("COMMANDS ELSE:", commands)
+                        commands.forEach((command: any) => {
+                            // Split the command string into parts (e.g., get element and set value)
+                            const match = command.match(/document\.getElementById\(["']([^"']+)["']\)\.value = ["']([^"']+)["']/);
+
+                            if (match) {
+                                const elementId = match[1];
+                                const value = match[2];
+
+                                const element = document.getElementById(elementId) as HTMLInputElement;
+                                if (element) {
+                                    element.value = value; // Set the value
+                                } else {
+                                    console.log(`Element with ID ${elementId} not found.`);
+                                }
+                            }
+                        });
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
+            }).catch((err) => {
+                setIsLoading(false)
+                console.log(err)
+            })
+        }
+    }
+
+
+    const copyToClipboard = () => {
+        const innerText = document.getElementById("__dynamicHTMLResume")?.innerText;
+        navigator.clipboard.writeText(innerText ?? '')
+            .then(() => {
+                console.log('Text successfully copied to clipboard');
+            })
+            .catch(err => {
+                console.error('Failed to copy text to clipboard: ', err);
+            });
     }
 
     useEffect(() => {
@@ -145,6 +249,7 @@ const ContentScript = () => {
             getResume().then((resume: string) => {
                 setHTMLResume(resume)
                 enhanceResume(resume)
+                generateCoverLetter()
             }).catch((err) => {
                 console.log(err)
             })
@@ -190,7 +295,7 @@ const ContentScript = () => {
             </DndContext>
             <Popover
                 id={open ? 'simple-popover' : undefined}
-                style={{zIndex: 999999999}}
+                style={{ zIndex: 999999999 }}
                 open={open}
                 anchorEl={anchorEl}
                 onClose={() => {
@@ -204,13 +309,30 @@ const ContentScript = () => {
             >
                 <Box sx={{ width: 700 }}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <Tabs value={tabIndex} onChange={(_evt: any, index: number) => setTabIndex(index)} aria-label="Clever Apply Tabs">
-                            <Tab label="Resume Enhancer" sx={{ textTransform: 'none', fontSize: 16 }} />
+                        <Tabs value={tabIndex} onChange={(_evt: any, index: number) => setTabIndex(index)} aria-label="Resume Tailor Tabs">
+                            <Tab label="Resume Tailor" sx={{ textTransform: 'none', fontSize: 16 }} />
                             <Tab label="Cover Letter Generator" sx={{ textTransform: 'none', fontSize: 16 }} />
                         </Tabs>
                     </Box>
                     <CustomTabPanel value={tabIndex} index={0}>
                         {isLoading && <CircularProgress />}
+                        <div style={{ padding: 5 }}>
+                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                                enhanceResume(htmlResume)
+                            }}>Regenerate</Button>}
+                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                                downloadAsPdf(document.getElementById("__dynamicHTMLResume"))
+                            }}>Download as PDF</Button>}
+                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                                copyToClipboard()
+                            }}>Copy Text</Button>}
+                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                                generateAutofillCommands()
+                            }}>Auto Fill</Button>}
+                            {enhancedResume && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
+                        </div>
+                        <br></br>
+                        <Divider />
                         <div style={{ fontSize: '12px' }}>
                             <span style={{ fontWeight: 'bold' }}>Disclaimer: </span>
                             By using this resume adjustment tool, you acknowledge that
@@ -220,8 +342,6 @@ const ContentScript = () => {
                             job titles, dates, qualifications, and other details, is accurate
                             and truthful.
                         </div>
-                        <br></br>
-                        {enhancedResume && <div className='info' dangerouslySetInnerHTML={{__html: enhancedResume}} />}
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
                         <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
