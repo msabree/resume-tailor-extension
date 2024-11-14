@@ -189,9 +189,9 @@ const ContentScript = () => {
                         inputData.forEach((input) => {
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
-                                const event = new Event('change', { bubbles: true });
+                                const event = new Event('input', { bubbles: true });
+                                element.value = input.value;
                                 element.dispatchEvent(event);
-                                element.value = input.value; // Set the value
                             } else {
                                 console.log(`Element with ID ${input.id} not found.`);
                             }
@@ -206,9 +206,9 @@ const ContentScript = () => {
                         inputData.forEach((input) => {
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
-                                const event = new Event('change', { bubbles: true });
+                                const event = new Event('input', { bubbles: true });
+                                element.value = input.value;
                                 element.dispatchEvent(event);
-                                element.value = input.value; // Set the value
                             } else {
                                 console.log(`Element with ID ${input.id} not found.`);
                             }
