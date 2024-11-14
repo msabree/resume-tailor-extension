@@ -23,8 +23,7 @@ interface TabPanelProps {
 const ContentScript = () => {
     const [tabIndex, setTabIndex] = useState(0);
     const [top, setTop] = useState(50);
-    const [jobInfo, setJobInfo] = useState("")
-    const [error, setError] = useState("")
+    const [jobInfo, setJobInfo] = useState("false")
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
     const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
@@ -69,7 +68,6 @@ const ContentScript = () => {
 
     const enhanceResume = (resume: string) => {
         if (jobInfo !== "false") {
-            setError("")
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -87,7 +85,7 @@ const ContentScript = () => {
                 Do not include placeholders (inside sqaure brackets) or any missing details; either fully 
                 populate the fields or omit them if not available.
 
-                Job Description (HTML format): ${jobInfo}
+                Job Description: ${jobInfo}
 
                 Resume (HTML format): ${resume}
 
@@ -104,14 +102,10 @@ const ContentScript = () => {
                 console.log(err)
             })
         }
-        else{
-            setError("No job description found on this page.")
-        }
     }
 
     const generateCoverLetter = () => {
         if (jobInfo !== "false" && htmlResume !== "") {
-            setError("")
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -123,7 +117,7 @@ const ContentScript = () => {
                 placeholders (inside sqaure brackets) or any missing details; either fully 
                 populate the fields (name, phone number, etc.) or omit them if not available.
 
-                Job Description (HTML format): ${jobInfo}
+                Job Description: ${jobInfo}
 
                 Resume (HTML format): ${htmlResume}
 
@@ -139,9 +133,6 @@ const ContentScript = () => {
                 setIsLoading(false)
                 console.log(err)
             })
-        }
-        else{
-            setError("No job description found on this page.")
         }
     }
 
@@ -271,7 +262,7 @@ const ContentScript = () => {
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
-                <div className='draggable-container' style={{ top }}>
+                <div className='draggable-container' style={{ top, visibility: jobInfo === 'false' ? 'hidden' : 'visible' }}>
                     <DragHandle badgeCount={jobInfo === "false" ? 0 : 1} />
                     <Button
                         size='small'
@@ -325,7 +316,6 @@ const ContentScript = () => {
                             {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 generateAutofillCommands()
                             }}>Auto Fill</Button>}
-                            {error && <div className='error'>{error}</div>}
                             {enhancedResume && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
                         </div>
                         <br></br>
@@ -341,7 +331,7 @@ const ContentScript = () => {
                         </div>
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={error} generateCoverLetter={() => {
+                        <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
                             generateCoverLetter()
                         }} />
                     </CustomTabPanel>
