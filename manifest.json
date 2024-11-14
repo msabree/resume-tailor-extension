@@ -2,7 +2,7 @@
     "version": "1.0.0",
     "manifest_version": 3,
     "name": "Resume Tailor",
-    "description": "Resume Tailor uses Google Gemini to customize your resume for any job description. It automatically generates a personalized CV and populates application fields, saving you time and effort.",
+    "description": "Resume Tailor automatically customizes your resume to match any job description and automatically generates a cover letter.",
     "action": {
         "default_popup": "js/index.html",
         "default_title": "Resume Tailor",

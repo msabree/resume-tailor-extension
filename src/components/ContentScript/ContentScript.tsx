@@ -24,6 +24,7 @@ const ContentScript = () => {
     const [tabIndex, setTabIndex] = useState(0);
     const [top, setTop] = useState(50);
     const [jobInfo, setJobInfo] = useState("")
+    const [error, setError] = useState("")
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
     const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
@@ -68,6 +69,7 @@ const ContentScript = () => {
 
     const enhanceResume = (resume: string) => {
         if (jobInfo !== "false") {
+            setError("")
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -94,7 +96,7 @@ const ContentScript = () => {
 
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
-                const rawString = result.response.text();
+                const rawString = result.response.text().replace("```html", "").replace("```", "");
                 // console.log(rawString)
                 setEnhancedResume(rawString.trim())
             }).catch((err) => {
@@ -102,10 +104,14 @@ const ContentScript = () => {
                 console.log(err)
             })
         }
+        else{
+            setError("No job description found on this page.")
+        }
     }
 
     const generateCoverLetter = () => {
         if (jobInfo !== "false" && htmlResume !== "") {
+            setError("")
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -126,13 +132,16 @@ const ContentScript = () => {
 
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
-                const rawString = result.response.text();
+                const rawString = result.response.text().replace("```html", "").replace("```", "");
                 // console.log(rawString)
                 setCoverLetterHTML(rawString.trim())
             }).catch((err) => {
                 setIsLoading(false)
                 console.log(err)
             })
+        }
+        else{
+            setError("No job description found on this page.")
         }
     }
 
@@ -146,7 +155,7 @@ const ContentScript = () => {
             const prompt = `
                 You are given the innerHTML of a job listing page, along with a 
                 resume and cover letter. Please scan the HTML and identify all 
-                form input elements. Return **one array** of commands to populate 
+                form input elements. Return **one array** of data I can use to populate 
                 these form fields with relevant data extracted from the resume 
                 and cover letter. Only populate fields that can be set from the 
                 provided documents (e.g., name, contact information, work experience, 
@@ -159,7 +168,7 @@ const ContentScript = () => {
                 RESUME: ${htmlResume}
                 COVER LETTER: ${coverLetterHTML}
 
-                Return one array with commands like: document.getElementById("inputId").value = "exampleValue";
+                Return one array of JSON with INPUT IDS AND VALUES like: [{id: <inputid>, value: <field_value>}]
 
                 PLEASE RETURN A VALID STRINGIFIED ARRAY THAT I CAN USE JSON.PARSE ON
 
@@ -169,54 +178,41 @@ const ContentScript = () => {
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const aiResponseRawText = result.response.text();
+                console.log(aiResponseRawText)
                 if (aiResponseRawText.includes('```json')) {
                     // parse out the html
                     const firstPart = aiResponseRawText.split("```json")[1]
                     const jsonStringOnly = firstPart.split("```")[0]
                     console.log(jsonStringOnly)
                     try {
-                        const commands = JSON.parse(jsonStringOnly)
-                        console.log("COMMANDS", commands)
-                        commands.forEach((command: any) => {
-                            // Split the command string into parts (e.g., get element and set value)
-                            const match = command.match(/document\.getElementById\(["']([^"']+)["']\)\.value = ["']([^"']+)["']/);
-
-                            if (match) {
-                                const elementId = match[1];
-                                const value = match[2];
-
-                                const element = document.getElementById(elementId) as HTMLInputElement;
-                                if (element) {
-                                    element.value = value; // Set the value
-                                } else {
-                                    console.log(`Element with ID ${elementId} not found.`);
-                                }
+                        const inputData:{id:string, value: string}[] = JSON.parse(jsonStringOnly)
+                        inputData.forEach((input) => {
+                            const element = document.getElementById(input.id) as HTMLInputElement;
+                            if (element) {
+                                const event = new Event('change', { bubbles: true });
+                                element.dispatchEvent(event);
+                                element.value = input.value; // Set the value
+                            } else {
+                                console.log(`Element with ID ${input.id} not found.`);
                             }
-                        });
+                        })
                     } catch (e) {
                         console.log(e)
                     }
                 } else {
                     // console.log(aiResponseRawText)
                     try {
-                        const commands = JSON.parse(aiResponseRawText)
-                        console.log("COMMANDS ELSE:", commands)
-                        commands.forEach((command: any) => {
-                            // Split the command string into parts (e.g., get element and set value)
-                            const match = command.match(/document\.getElementById\(["']([^"']+)["']\)\.value = ["']([^"']+)["']/);
-
-                            if (match) {
-                                const elementId = match[1];
-                                const value = match[2];
-
-                                const element = document.getElementById(elementId) as HTMLInputElement;
-                                if (element) {
-                                    element.value = value; // Set the value
-                                } else {
-                                    console.log(`Element with ID ${elementId} not found.`);
-                                }
+                        const inputData:{id:string, value: string}[] = JSON.parse(aiResponseRawText)
+                        inputData.forEach((input) => {
+                            const element = document.getElementById(input.id) as HTMLInputElement;
+                            if (element) {
+                                const event = new Event('change', { bubbles: true });
+                                element.dispatchEvent(event);
+                                element.value = input.value; // Set the value
+                            } else {
+                                console.log(`Element with ID ${input.id} not found.`);
                             }
-                        });
+                        })
                     } catch (e) {
                         console.log(e)
                     }
@@ -329,6 +325,7 @@ const ContentScript = () => {
                             {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 generateAutofillCommands()
                             }}>Auto Fill</Button>}
+                            {error && <div className='error'>{error}</div>}
                             {enhancedResume && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
                         </div>
                         <br></br>
@@ -344,7 +341,7 @@ const ContentScript = () => {
                         </div>
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
+                        <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={error} generateCoverLetter={() => {
                             generateCoverLetter()
                         }} />
                     </CustomTabPanel>

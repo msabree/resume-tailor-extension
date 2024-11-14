@@ -33,7 +33,7 @@ const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLett
                 copyToClipboard()
             }}>Copy Text</Button>
             {coverLetterHTML && <div id="__dynamicCoverLetter" className='cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
-            {errorMessage && <div className='info'>{errorMessage}</div>}
+            {errorMessage && <div className='error'>{errorMessage}</div>}
         </div>
     );
 }
