@@ -24,7 +24,7 @@ To test the extension locally, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:msabree/clever-apply-extension.git
+   git clone git@github.com:msabree/resume-tailor-extension.git
    ```
 
 2. Create a `.env` file in the project root and add your API key:
