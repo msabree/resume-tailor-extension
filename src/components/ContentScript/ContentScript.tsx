@@ -12,6 +12,7 @@ import CoverLetterGenerator from '../CoverLetterGenerator/CoverLetterGenerator';
 import "./styles.css";
 import { getResume } from '../../utils/messaging';
 import { downloadAsPdf } from '../../utils/files';
+import { detectPlaceholders } from '../../utils/strings';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -42,17 +43,17 @@ const ContentScript = () => {
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-
             const prompt = `
-                You are given the innerText of a website page. 
-                Determine whether the page contains a job listing 
-                with a job description and a clear prompt to apply 
-                for the position. If the page contains a job listing, 
-                return a detailed description of the job (e.g., 
-                job title, position, job description, application instructions). 
-                If it does not, return "false". Do not include any additional text 
-                or delimiters. Just return the job description or "false". 
-                InnerText --> ${pageInnerText}
+                You are given the innerText of a webpage. Determine if the page contains a job listing, including a job description and clear instructions on how to apply for the position. If the page contains a job listing, return the detailed description, including (if available):
+
+                Job title
+                Job type (e.g., full-time, part-time, remote)
+                Job location (e.g., city, state, remote)
+                Job description (including responsibilities and qualifications)
+                Application instructions (e.g., "Apply here," "Submit resume," contact info, application link)
+                If the page does not contain a job listing, return "false." Be flexible with formatting and keyword variations, and look for common job-related terms like "We are hiring," "Join our team," "Position available," "Responsibilities," "Apply now," "Send resume to," etc. Consider that job listings may not always follow a standard format.
+
+                Return only the job description or "false" if no job listing is found.
             `;
 
             model.generateContent(prompt).then((result) => {
@@ -95,7 +96,6 @@ const ContentScript = () => {
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const rawString = result.response.text().replace("```html", "").replace("```", "");
-                // console.log(rawString)
                 setEnhancedResume(rawString.trim())
             }).catch((err) => {
                 setIsLoading(false)
@@ -104,31 +104,72 @@ const ContentScript = () => {
         }
     }
 
-    const generateCoverLetter = () => {
-        if (jobInfo !== "false" && htmlResume !== "") {
+    // WHEN AI fails we fallback here to have AI redo its work...
+    const replacePlaceholders = (aiGeneratedCoverLetter: string) => {
+        setIsLoading(true)
+        const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `
+            You have been provided with a cover letter that contains placeholders (e.g., "[Date]", "[Hiring Manager Name]", "[Company Name]"). Your task is to rewrite the cover letter, removing all placeholders, and generate a more generic version of the cover letter that can be used for any job application. The letter should be professional, polite, and tailored in tone but avoid specifics that were originally placeholders.
+
+            Please do not include any NEW placeholders (or my code will get stuck in a loop), and create a new version that looks complete and well-structured. It's fine for the letter to be generic, as more specific data was needed in the original, but it should still be coherent and presentable.
+
+            Return only the HTML code for the cover letter. Do not include any commentary, explanations, or additional text.
+
+            ORIGINAL COVER LETTER: ${aiGeneratedCoverLetter}
+        `;
+
+        model.generateContent(prompt).then((result) => {
+            setIsLoading(false)
+            const rawString = result.response.text().replace("```html", "").replace("```", "");
+            const hasPlaceholders = detectPlaceholders(rawString)
+            if (hasPlaceholders) {
+                console.log('Still has placeholders...')
+                setCoverLetterHTML(rawString.trim())
+            }
+            else {
+                setCoverLetterHTML(rawString.trim())
+            }
+        }).catch((err) => {
+            setIsLoading(false)
+            console.log(err)
+        })
+    }
+
+    const generateCoverLetter = (_resume: string) => {
+        if (jobInfo !== "false" && _resume !== "") {
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const prompt = `
-                You are provided with a detailed job description and a resume in HTML format.
-                Please generate a cover letter based on the job description and the resume, 
-                pulling relevant contact information directly from the resume. Do not include 
-                placeholders (inside sqaure brackets) or any missing details; either fully 
-                populate the fields (name, phone number, etc.) or omit them if not available.
+                You are given a job description and a resume in HTML format. Do not use any placeholders. Instead, extract the necessary details from both the job description and the resume and generate a fully customized, professional cover letter in HTML format.
 
                 Job Description: ${jobInfo}
+                Resume: ${_resume}
 
-                Resume (HTML format): ${htmlResume}
+                Instructions:
+                Extract real contact information (e.g., name, phone number, email) directly from the provided resume HTML.
+                Tailor the cover letter to the specific job description by using the most relevant skills, experiences, and qualifications from the resume.
+                Ensure no placeholders like "[Date]", "[Hiring Manager Name]", or "[Platform where you saw the job posting]" are included.
+                Include all necessary details, including name, phone number, email, relevant experience, and skills directly from the resume and job description.
+                The cover letter must be in HTML format and must not include any extra text or commentary.
+                Do not generate placeholders or any text that would require manual input later (e.g., "[Date]" or "[Hiring Manager Name]"). Fully extract and use the available data.
 
-                Return only the cover letter in HTML format, without any additional commentary or text.
+                Return only the HTML code for the cover letter. Do not include any commentary, explanations, or additional text.
             `;
 
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const rawString = result.response.text().replace("```html", "").replace("```", "");
-                // console.log(rawString)
-                setCoverLetterHTML(rawString.trim())
+                const hasPlaceholders = detectPlaceholders(rawString)
+                if (hasPlaceholders) {
+                    replacePlaceholders(rawString)
+                }
+                else {
+                    setCoverLetterHTML(rawString.trim())
+                }
             }).catch((err) => {
                 setIsLoading(false)
                 console.log(err)
@@ -169,14 +210,12 @@ const ContentScript = () => {
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
                 const aiResponseRawText = result.response.text();
-                console.log(aiResponseRawText)
                 if (aiResponseRawText.includes('```json')) {
-                    // parse out the html
                     const firstPart = aiResponseRawText.split("```json")[1]
                     const jsonStringOnly = firstPart.split("```")[0]
                     console.log(jsonStringOnly)
                     try {
-                        const inputData:{id:string, value: string}[] = JSON.parse(jsonStringOnly)
+                        const inputData: { id: string, value: string }[] = JSON.parse(jsonStringOnly)
                         inputData.forEach((input) => {
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
@@ -193,7 +232,7 @@ const ContentScript = () => {
                 } else {
                     // console.log(aiResponseRawText)
                     try {
-                        const inputData:{id:string, value: string}[] = JSON.parse(aiResponseRawText)
+                        const inputData: { id: string, value: string }[] = JSON.parse(aiResponseRawText)
                         inputData.forEach((input) => {
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
@@ -236,7 +275,7 @@ const ContentScript = () => {
             getResume().then((resume: string) => {
                 setHTMLResume(resume)
                 enhanceResume(resume)
-                generateCoverLetter()
+                generateCoverLetter(resume)
             }).catch((err) => {
                 console.log(err)
             })
@@ -331,8 +370,8 @@ const ContentScript = () => {
                         </div>
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <CoverLetterGenerator coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
-                            generateCoverLetter()
+                        <CoverLetterGenerator isLoading={isLoading} coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
+                            generateCoverLetter(htmlResume)
                         }} />
                     </CustomTabPanel>
                 </Box>

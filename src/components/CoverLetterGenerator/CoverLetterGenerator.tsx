@@ -2,11 +2,13 @@ import React from 'react';
 import Button from '@mui/material/Button/Button';
 import { downloadAsPdf } from '../../utils/files';
 import './styles.css'
+import { CircularProgress } from '@mui/material';
 
 interface CoverLetterGeneratorProps {
     coverLetterHTML?: string
     errorMessage?: string
     generateCoverLetter: () => void
+    isLoading: boolean
 }
 
 const copyToClipboard = () => {
@@ -20,12 +22,13 @@ const copyToClipboard = () => {
         });
 }
 
-const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLetter }: CoverLetterGeneratorProps) => {
+const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLetter, isLoading }: CoverLetterGeneratorProps) => {
     return (
         <div>
+            {isLoading && <CircularProgress />}
             <Button color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
                 generateCoverLetter()
-            }}>Regenerate</Button>
+            }}>{coverLetterHTML === '' ? 'Generate' : 'Regenerate'}</Button>
             <Button disabled={coverLetterHTML === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
                 downloadAsPdf(document.getElementById("__dynamicCoverLetter"))
             }}>Download as PDF</Button>
