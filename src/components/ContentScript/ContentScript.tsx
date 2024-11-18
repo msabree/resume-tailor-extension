@@ -13,6 +13,7 @@ import "./styles.css";
 import { getResume } from '../../utils/messaging';
 import { downloadAsPdf } from '../../utils/files';
 import { detectPlaceholders } from '../../utils/strings';
+import Bot from '../../icons/Bot';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -25,6 +26,7 @@ const ContentScript = () => {
     const [tabIndex, setTabIndex] = useState(0);
     const [top, setTop] = useState(50);
     const [jobInfo, setJobInfo] = useState("false")
+    const [isAiError, setIsAiError] = useState(true)
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
     const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
@@ -39,6 +41,7 @@ const ContentScript = () => {
     const checkForJobPosting = () => {
         const pageInnerText = document.body.innerText.trim();
         if (pageInnerText !== '') {
+            setIsAiError(false)
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -64,6 +67,7 @@ const ContentScript = () => {
                 const rawString = result.response.text();
                 setJobInfo(rawString.trim())
             }).catch((err) => {
+                setIsAiError(true)
                 setIsLoading(false)
                 console.log(err)
             })
@@ -72,6 +76,7 @@ const ContentScript = () => {
 
     const enhanceResume = (resume: string) => {
         if (jobInfo !== "false") {
+            setIsAiError(false)
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -101,6 +106,7 @@ const ContentScript = () => {
                 const rawString = result.response.text().replace("```html", "").replace("```", "");
                 setEnhancedResume(rawString.trim())
             }).catch((err) => {
+                setIsAiError(true)
                 setIsLoading(false)
                 console.log(err)
             })
@@ -304,7 +310,7 @@ const ContentScript = () => {
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
-                <div className='draggable-container' style={{ top, visibility: jobInfo === 'false' ? 'hidden' : 'visible' }}>
+                <div className='draggable-container' style={{ top, visibility: jobInfo === 'false' && !isAiError ? 'hidden' : 'visible' }}>
                     <DragHandle badgeCount={jobInfo === "false" ? 0 : 1} />
                     <Button
                         size='small'
@@ -364,6 +370,15 @@ const ContentScript = () => {
                                 </div>
                             )}
                             {enhancedResume && !isLoading && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
+                            {!enhancedResume && isAiError && (
+                                <div className='engine-error'>
+                                    <div>
+                                        <Bot width={100} height={100} />
+                                    </div>
+                                    <div><span style={{ fontWeight: 'bold' }}>Error: </span>The AI Engine is currently overloaded.</div>
+                                    <div>Try refreshing the page or you can try again later.</div>
+                                </div>
+                            )}
                         </div>
                         <br></br>
                         <Divider />
