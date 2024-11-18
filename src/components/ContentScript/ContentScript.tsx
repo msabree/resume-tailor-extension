@@ -26,7 +26,8 @@ const ContentScript = () => {
     const [tabIndex, setTabIndex] = useState(0);
     const [top, setTop] = useState(50);
     const [jobInfo, setJobInfo] = useState("false")
-    const [isAiError, setIsAiError] = useState(true)
+    const [isAiError, setIsAiError] = useState(false)
+    const [isLoadError, setIsLoadError] = useState(false)
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
     const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
@@ -42,6 +43,7 @@ const ContentScript = () => {
         const pageInnerText = document.body.innerText.trim();
         if (pageInnerText !== '') {
             setIsAiError(false)
+            setIsLoadError(false)
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -68,6 +70,7 @@ const ContentScript = () => {
                 setJobInfo(rawString.trim())
             }).catch((err) => {
                 setIsAiError(true)
+                setIsLoadError(true)
                 setIsLoading(false)
                 console.log(err)
             })
@@ -312,7 +315,7 @@ const ContentScript = () => {
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
-                <div className='resume-tailor-draggable-container' style={{ top, visibility: jobInfo === 'false' && !isAiError ? 'hidden' : 'visible' }}>
+                <div className='resume-tailor-draggable-container' style={{ top, visibility: jobInfo === 'false' && !isLoadError ? 'hidden' : 'visible' }}>
                     <DragHandle badgeCount={jobInfo === "false" ? 0 : 1} />
                     <Button
                         size='small'
