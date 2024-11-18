@@ -316,7 +316,7 @@ const ContentScript = () => {
                     <DragHandle badgeCount={jobInfo === "false" ? 0 : 1} />
                     <Button
                         size='small'
-                        sx={{ color: 'orange', width: 10, margin: 0, padding: 0, fontSize: 14, textTransform: 'none' }}
+                        sx={{ color: '#ff4c00', width: 10, margin: 0, padding: 0, fontSize: 14, fontWeight: 'bolder', textTransform: 'none' }}
                         onClick={(event) => {
                             setOpen(!open)
                             if (open) {
