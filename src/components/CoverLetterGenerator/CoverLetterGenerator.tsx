@@ -25,18 +25,23 @@ const copyToClipboard = () => {
 const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLetter, isLoading }: CoverLetterGeneratorProps) => {
     return (
         <div>
-            {isLoading && <CircularProgress />}
-            <Button color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
+            <Button disabled={isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
                 generateCoverLetter()
             }}>{coverLetterHTML === '' ? 'Generate' : 'Regenerate'}</Button>
-            <Button disabled={coverLetterHTML === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
+            <Button disabled={coverLetterHTML === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
                 downloadAsPdf(document.getElementById("__dynamicCoverLetter"))
             }}>Download as PDF</Button>
-            <Button disabled={coverLetterHTML === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none' }} onClick={() => {
+            <Button disabled={coverLetterHTML === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none' }} onClick={() => {
                 copyToClipboard()
             }}>Copy Text</Button>
-            {coverLetterHTML && <div id="__dynamicCoverLetter" className='cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
-            {errorMessage && <div className='error'>{errorMessage}</div>}
+            {coverLetterHTML && !isLoading && <div id="__dynamicCoverLetter" className='cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
+            {errorMessage && !isLoading && <div className='error'>{errorMessage}</div>}
+            {isLoading && (
+                <div className='loader'>
+                    <CircularProgress sx={{marginRight: 3}}/>
+                    Generating a customized cover letter... Please wait.
+                </div>
+            )}
         </div>
     );
 }

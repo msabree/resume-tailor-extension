@@ -13,3 +13,11 @@
 .cover-letter {
     margin-top: 10px;
 }
+
+.loader {
+    font-size: 20px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

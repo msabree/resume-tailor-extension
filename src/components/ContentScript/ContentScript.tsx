@@ -44,16 +44,19 @@ const ContentScript = () => {
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const prompt = `
-                You are given the innerText of a webpage. Determine if the page contains a job listing, including a job description and clear instructions on how to apply for the position. If the page contains a job listing, return the detailed description, including (if available):
+                You are given the innerText of a website page. 
+                Determine whether the page contains a job listing 
+                with a job description and a clear prompt to apply 
+                for the position. If the page contains a job listing, 
+                return a detailed description of the job (e.g., 
+                job title, position, job description, application instructions). 
+                If it does not, return "false". Do not include any additional text 
+                or delimiters. Just return the job description or "false". 
+                InnerText --> ${pageInnerText}
 
-                Job title
-                Job type (e.g., full-time, part-time, remote)
-                Job location (e.g., city, state, remote)
-                Job description (including responsibilities and qualifications)
-                Application instructions (e.g., "Apply here," "Submit resume," contact info, application link)
                 If the page does not contain a job listing, return "false." Be flexible with formatting and keyword variations, and look for common job-related terms like "We are hiring," "Join our team," "Position available," "Responsibilities," "Apply now," "Send resume to," etc. Consider that job listings may not always follow a standard format.
 
-                Return only the job description or "false" if no job listing is found.
+                Return only the job description as a string or "false" if no job listing is found.
             `;
 
             model.generateContent(prompt).then((result) => {
@@ -341,21 +344,26 @@ const ContentScript = () => {
                         </Tabs>
                     </Box>
                     <CustomTabPanel value={tabIndex} index={0}>
-                        {isLoading && <CircularProgress />}
                         <div style={{ padding: 5 }}>
-                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            <Button disabled={isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 enhanceResume(htmlResume)
-                            }}>Regenerate</Button>}
-                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            }}>{enhancedResume === '' ? 'Generate' : 'Regenerate'}</Button>
+                            <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 downloadAsPdf(document.getElementById("__dynamicHTMLResume"))
-                            }}>Download as PDF</Button>}
-                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            }}>Download as PDF</Button>
+                            <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 copyToClipboard()
-                            }}>Copy Text</Button>}
-                            {enhancedResume && <Button disabled={enhancedResume === ''} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            }}>Copy Text</Button>
+                            <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 generateAutofillCommands()
-                            }}>Auto Fill</Button>}
-                            {enhancedResume && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
+                            }}>Auto Fill</Button>
+                            {isLoading && (
+                                <div className='loader'>
+                                    <CircularProgress sx={{ marginRight: 3 }} />
+                                    Tailoring your resume to match this job posting... Please wait.
+                                </div>
+                            )}
+                            {enhancedResume && !isLoading && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
                         </div>
                         <br></br>
                         <Divider />
