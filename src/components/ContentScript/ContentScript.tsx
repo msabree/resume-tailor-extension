@@ -9,11 +9,11 @@ import Button from '@mui/material/Button/Button';
 import DragHandle from '../DragHandle/DragHandle';
 import { Box, Tabs, Tab, CircularProgress, Divider } from '@mui/material';
 import CoverLetterGenerator from '../CoverLetterGenerator/CoverLetterGenerator';
-import "./styles.css";
 import { getResume } from '../../utils/messaging';
 import { downloadAsPdf } from '../../utils/files';
 import { detectPlaceholders } from '../../utils/strings';
 import Bot from '../../icons/Bot';
+import '../../styles.css';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -115,6 +115,7 @@ const ContentScript = () => {
 
     // WHEN AI fails we fallback here to have AI redo its work...
     const replacePlaceholders = (aiGeneratedCoverLetter: string) => {
+        setIsAiError(false)
         setIsLoading(true)
         const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -142,6 +143,7 @@ const ContentScript = () => {
             }
         }).catch((err) => {
             setIsLoading(false)
+            setIsAiError(true)
             console.log(err)
         })
     }
@@ -310,7 +312,7 @@ const ContentScript = () => {
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
-                <div className='draggable-container' style={{ top, visibility: jobInfo === 'false' && !isAiError ? 'hidden' : 'visible' }}>
+                <div className='resume-tailor-draggable-container' style={{ top, visibility: jobInfo === 'false' && !isAiError ? 'hidden' : 'visible' }}>
                     <DragHandle badgeCount={jobInfo === "false" ? 0 : 1} />
                     <Button
                         size='small'
@@ -364,14 +366,14 @@ const ContentScript = () => {
                                 generateAutofillCommands()
                             }}>Auto Fill</Button>
                             {isLoading && (
-                                <div className='loader'>
+                                <div className='resume-tailor-loader'>
                                     <CircularProgress sx={{ marginRight: 3 }} />
                                     Tailoring your resume to match this job posting... Please wait.
                                 </div>
                             )}
                             {enhancedResume && !isLoading && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
                             {!enhancedResume && isAiError && (
-                                <div className='engine-error'>
+                                <div className='resume-tailor-engine-error'>
                                     <div>
                                         <Bot width={100} height={100} />
                                     </div>
@@ -393,7 +395,7 @@ const ContentScript = () => {
                         </div>
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <CoverLetterGenerator isLoading={isLoading} coverLetterHTML={coverLetterHTML} errorMessage={''} generateCoverLetter={() => {
+                        <CoverLetterGenerator isLoading={isLoading} coverLetterHTML={coverLetterHTML} errorMessage={isAiError ? 'true' : ''} generateCoverLetter={() => {
                             generateCoverLetter(htmlResume)
                         }} />
                     </CustomTabPanel>

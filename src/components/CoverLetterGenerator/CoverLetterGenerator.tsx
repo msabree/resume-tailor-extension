@@ -1,8 +1,9 @@
 import React from 'react';
 import Button from '@mui/material/Button/Button';
 import { downloadAsPdf } from '../../utils/files';
-import './styles.css'
 import { CircularProgress } from '@mui/material';
+import Bot from '../../icons/Bot';
+import '../../styles.css';
 
 interface CoverLetterGeneratorProps {
     coverLetterHTML?: string
@@ -34,11 +35,19 @@ const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLett
             <Button disabled={coverLetterHTML === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none' }} onClick={() => {
                 copyToClipboard()
             }}>Copy Text</Button>
-            {coverLetterHTML && !isLoading && <div id="__dynamicCoverLetter" className='cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
-            {errorMessage && !isLoading && <div className='error'>{errorMessage}</div>}
+            {coverLetterHTML && !isLoading && <div id="__dynamicCoverLetter" className='resume-tailor-cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
+            {!coverLetterHTML && errorMessage && (
+                <div className='resume-tailor-engine-error'>
+                    <div>
+                        <Bot width={100} height={100} />
+                    </div>
+                    <div><span style={{ fontWeight: 'bold' }}>Error: </span>The AI Engine is currently overloaded.</div>
+                    <div>Try refreshing the page or you can try again later.</div>
+                </div>
+            )}
             {isLoading && (
-                <div className='loader'>
-                    <CircularProgress sx={{marginRight: 3}}/>
+                <div className='resume-tailor-loader'>
+                    <CircularProgress sx={{ marginRight: 3 }} />
                     Generating a customized cover letter... Please wait.
                 </div>
             )}

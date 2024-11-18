@@ -2,7 +2,7 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Badge } from '@mui/material';
 import Logo from '../../icons/Logo';
-import "./styles.css"
+import '../../styles.css'
 
 interface DragHandleProps {
   badgeCount: number
@@ -18,7 +18,7 @@ const DragHandle = ({ badgeCount }: DragHandleProps) => {
   } : undefined;
 
   return (
-    <div className="drag-handle" ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    <div className="resume-tailor-drag-handle" ref={setNodeRef} style={style} {...listeners} {...attributes}>
       <Badge badgeContent={badgeCount} color='warning' anchorOrigin={{ vertical: 'top', horizontal: 'left' }}>
         <Logo width={64} height={64} fill={'#ffffff'} />
       </Badge>
