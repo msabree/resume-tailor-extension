@@ -70,7 +70,7 @@ const ActionPage = () => {
         }
       }} />
 
-      {htmlResume && <div className='resume-tailor-info' dangerouslySetInnerHTML={{__html: htmlResume}} />}
+      {htmlResume && <div className='info' dangerouslySetInnerHTML={{__html: htmlResume}} />}
       <div className='footer'>
         <a href="https://www.flaticon.com/free-icons/tailor" title="tailor icons">Tailor icons created by monkik - Flaticon</a>
       </div>
