@@ -2,7 +2,7 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Badge } from '@mui/material';
 import Logo from '../../icons/Logo';
-import '../../styles.css'
+import '../../index.css';
 
 interface DragHandleProps {
   badgeCount: number

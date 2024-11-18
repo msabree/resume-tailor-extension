@@ -3,7 +3,7 @@ import Button from '@mui/material/Button/Button';
 import { downloadAsPdf } from '../../utils/files';
 import { CircularProgress } from '@mui/material';
 import Bot from '../../icons/Bot';
-import '../../styles.css';
+import '../../index.css';
 
 interface CoverLetterGeneratorProps {
     coverLetterHTML?: string

@@ -13,7 +13,7 @@ import { getResume } from '../../utils/messaging';
 import { downloadAsPdf } from '../../utils/files';
 import { detectPlaceholders } from '../../utils/strings';
 import Bot from '../../icons/Bot';
-import '../../styles.css';
+import '../../index.css';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -316,7 +316,7 @@ const ContentScript = () => {
                     <DragHandle badgeCount={jobInfo === "false" ? 0 : 1} />
                     <Button
                         size='small'
-                        sx={{ width: 10, margin: 0, padding: 0, fontSize: 14, textTransform: 'none' }}
+                        sx={{ color: 'orange', width: 10, margin: 0, padding: 0, fontSize: 14, textTransform: 'none' }}
                         onClick={(event) => {
                             setOpen(!open)
                             if (open) {
