@@ -36,7 +36,7 @@ const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLett
                 copyToClipboard()
             }}>Copy Text</Button>
             {coverLetterHTML && !isLoading && <div id="__dynamicCoverLetter" className='resume-tailor-cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
-            {!coverLetterHTML && errorMessage && (
+            {!coverLetterHTML && !isLoading && errorMessage && (
                 <div className='resume-tailor-engine-error'>
                     <div>
                         <Bot width={100} height={100} />

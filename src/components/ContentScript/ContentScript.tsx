@@ -14,6 +14,7 @@ import { downloadAsPdf } from '../../utils/files';
 import { detectPlaceholders } from '../../utils/strings';
 import Bot from '../../icons/Bot';
 import '../../index.css';
+import { AI_MODEL } from '../../constants';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -32,6 +33,7 @@ const ContentScript = () => {
     const [enhancedResume, setEnhancedResume] = useState<string>('')
     const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
+    const [isAutoFilling, setIsAutoFilling] = useState(false)
     const [open, setOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
@@ -46,9 +48,9 @@ const ContentScript = () => {
             setIsLoadError(false)
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            const prompt = `
+            const model = genAI.getGenerativeModel({ 
+                model: AI_MODEL,
+                systemInstruction: `
                 You are given the innerText of a website page. 
                 Determine whether the page contains a job listing 
                 with a job description and a clear prompt to apply 
@@ -56,13 +58,15 @@ const ContentScript = () => {
                 return a detailed description of the job (e.g., 
                 job title, position, job description, application instructions). 
                 If it does not, return "false". Do not include any additional text 
-                or delimiters. Just return the job description or "false". 
-                InnerText --> ${pageInnerText}
+                or delimiters. Just return the job description or "false".
 
                 If the page does not contain a job listing, return "false." Be flexible with formatting and keyword variations, and look for common job-related terms like "We are hiring," "Join our team," "Position available," "Responsibilities," "Apply now," "Send resume to," etc. Consider that job listings may not always follow a standard format.
 
                 Return only the job description as a string or "false" if no job listing is found.
-            `;
+                `
+            });
+
+            const prompt = `This is the innerText of the page: ${pageInnerText}`;
 
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
@@ -82,9 +86,9 @@ const ContentScript = () => {
             setIsAiError(false)
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            const prompt = `
+            const model = genAI.getGenerativeModel({ 
+                model: AI_MODEL,
+                systemInstruction: `
                 You are given a detailed job description and a resume in HTML format. 
                 Please adjust the resume and tailor it to the job description. Focus on the following:
 
@@ -96,13 +100,11 @@ const ContentScript = () => {
                 
                 Do not include placeholders (inside sqaure brackets) or any missing details; either fully 
                 populate the fields or omit them if not available.
-
-                Job Description: ${jobInfo}
-
-                Resume (HTML format): ${resume}
-
                 Return only the tailored resume in HTML format, without any extra text.
-            `;
+                `
+            });
+
+            const prompt = `This is the job description: ${jobInfo} and this is the resume: ${resume}`;
 
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
@@ -114,6 +116,9 @@ const ContentScript = () => {
                 console.log(err)
             })
         }
+        else{
+            checkForJobPosting()
+        }
     }
 
     // WHEN AI fails we fallback here to have AI redo its work...
@@ -121,17 +126,18 @@ const ContentScript = () => {
         setIsAiError(false)
         setIsLoading(true)
         const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ 
+            model: AI_MODEL,
+            systemInstruction: `
+                You have been provided with a cover letter that contains placeholders (e.g., "[Date]", "[Hiring Manager Name]", "[Company Name]"). Your task is to rewrite the cover letter, removing all placeholders, and generate a more generic version of the cover letter that can be used for any job application. The letter should be professional, polite, and tailored in tone but avoid specifics that were originally placeholders.
 
-        const prompt = `
-            You have been provided with a cover letter that contains placeholders (e.g., "[Date]", "[Hiring Manager Name]", "[Company Name]"). Your task is to rewrite the cover letter, removing all placeholders, and generate a more generic version of the cover letter that can be used for any job application. The letter should be professional, polite, and tailored in tone but avoid specifics that were originally placeholders.
+                Please do not include any NEW placeholders (or my code will get stuck in a loop), and create a new version that looks complete and well-structured. It's fine for the letter to be generic, as more specific data was needed in the original, but it should still be coherent and presentable.
 
-            Please do not include any NEW placeholders (or my code will get stuck in a loop), and create a new version that looks complete and well-structured. It's fine for the letter to be generic, as more specific data was needed in the original, but it should still be coherent and presentable.
+                Return only the HTML code for the cover letter. Do not include any commentary, explanations, or additional text. 
+            `
+        });
 
-            Return only the HTML code for the cover letter. Do not include any commentary, explanations, or additional text.
-
-            ORIGINAL COVER LETTER: ${aiGeneratedCoverLetter}
-        `;
+        const prompt = `This is the cover letter: ${aiGeneratedCoverLetter}`;
 
         model.generateContent(prompt).then((result) => {
             setIsLoading(false)
@@ -155,24 +161,23 @@ const ContentScript = () => {
         if (jobInfo !== "false" && _resume !== "") {
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = genAI.getGenerativeModel({ 
+                model: AI_MODEL,
+                systemInstruction: `
+                    You are given a job description and a resume in HTML format. Do not use any placeholders. Instead, extract the necessary details from both the job description and the resume and generate a fully customized, professional cover letter in HTML format.
+                    
+                    Extract real contact information (e.g., name, phone number, email) directly from the provided resume HTML.
+                    Tailor the cover letter to the specific job description by using the most relevant skills, experiences, and qualifications from the resume.
+                    Ensure no placeholders like "[Date]", "[Hiring Manager Name]", or "[Platform where you saw the job posting]" are included.
+                    Include all necessary details, including name, phone number, email, relevant experience, and skills directly from the resume and job description.
+                    The cover letter must be in HTML format and must not include any extra text or commentary.
+                    Do not generate placeholders or any text that would require manual input later (e.g., "[Date]" or "[Hiring Manager Name]"). Fully extract and use the available data.
 
-            const prompt = `
-                You are given a job description and a resume in HTML format. Do not use any placeholders. Instead, extract the necessary details from both the job description and the resume and generate a fully customized, professional cover letter in HTML format.
+                    Return only the HTML code for the cover letter. Do not include any commentary, explanations, or additional text.
+                `
+            });
 
-                Job Description: ${jobInfo}
-                Resume: ${_resume}
-
-                Instructions:
-                Extract real contact information (e.g., name, phone number, email) directly from the provided resume HTML.
-                Tailor the cover letter to the specific job description by using the most relevant skills, experiences, and qualifications from the resume.
-                Ensure no placeholders like "[Date]", "[Hiring Manager Name]", or "[Platform where you saw the job posting]" are included.
-                Include all necessary details, including name, phone number, email, relevant experience, and skills directly from the resume and job description.
-                The cover letter must be in HTML format and must not include any extra text or commentary.
-                Do not generate placeholders or any text that would require manual input later (e.g., "[Date]" or "[Hiring Manager Name]"). Fully extract and use the available data.
-
-                Return only the HTML code for the cover letter. Do not include any commentary, explanations, or additional text.
-            `;
+            const prompt = `This is the job description: ${jobInfo} and this is the resume: ${_resume}`;
 
             model.generateContent(prompt).then((result) => {
                 setIsLoading(false)
@@ -189,47 +194,53 @@ const ContentScript = () => {
                 console.log(err)
             })
         }
+        else{
+            checkForJobPosting()
+        }
     }
 
     const generateAutofillCommands = () => {
         const pageInnerHTML = document.body.innerHTML
         if (pageInnerHTML && htmlResume !== "") {
-            setIsLoading(true)
+            setIsAutoFilling(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            const prompt = `
+            const model = genAI.getGenerativeModel({ 
+                model: AI_MODEL,
+                systemInstruction: `
                 You are given the innerHTML of a job listing page, along with a 
                 resume and cover letter. Please scan the HTML and identify all 
-                form input elements. Return **one array** of data I can use to populate 
+                form input elements. Return the data I can use to populate 
                 these form fields with relevant data extracted from the resume 
                 and cover letter. Only populate fields that can be set from the 
                 provided documents (e.g., name, contact information, work experience, 
                 skills, cover letter content). Any items that cannot be filled based on 
-                the resume or cover letter should be omitted.
-
-                The information you'll be provided includes:
-
-                INNER HTML OF PAGE: ${pageInnerHTML}
-                RESUME: ${htmlResume}
-                COVER LETTER: ${coverLetterHTML}
+                the resume or cover letter should be omitted. 
 
                 Return one array of JSON with INPUT IDS AND VALUES like: [{id: <inputid>, value: <field_value>}]
 
                 PLEASE RETURN A VALID STRINGIFIED ARRAY THAT I CAN USE JSON.PARSE ON
 
                 DO NOT INCLUDE ANY EXPLANATION, ONLY RETURN THE ARRAY.
+                `
+            });
+
+            const prompt = `
+                This is the inner HTML of the page: ${pageInnerHTML}.
+                This is the resume: ${htmlResume}.
+                And this is the cover letter: ${coverLetterHTML}
             `;
 
             model.generateContent(prompt).then((result) => {
-                setIsLoading(false)
+                setIsAutoFilling(false)
                 const aiResponseRawText = result.response.text();
+                console.log(aiResponseRawText)
                 if (aiResponseRawText.includes('```json')) {
                     const firstPart = aiResponseRawText.split("```json")[1]
                     const jsonStringOnly = firstPart.split("```")[0]
-                    console.log(jsonStringOnly)
+                    console.log(jsonStringOnly, typeof jsonStringOnly)
                     try {
                         const inputData: { id: string, value: string }[] = JSON.parse(jsonStringOnly)
+                        console.log(inputData)
                         inputData.forEach((input) => {
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
@@ -247,6 +258,7 @@ const ContentScript = () => {
                     // console.log(aiResponseRawText)
                     try {
                         const inputData: { id: string, value: string }[] = JSON.parse(aiResponseRawText)
+                        console.log(inputData)
                         inputData.forEach((input) => {
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
@@ -262,7 +274,7 @@ const ContentScript = () => {
                     }
                 }
             }).catch((err) => {
-                setIsLoading(false)
+                setIsAutoFilling(false)
                 console.log(err)
             })
         }
@@ -365,9 +377,9 @@ const ContentScript = () => {
                             <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 copyToClipboard()
                             }}>Copy Text</Button>
-                            <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            <Button disabled={enhancedResume === '' || isAutoFilling} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 generateAutofillCommands()
-                            }}>Auto Fill</Button>
+                            }}>Auto Fill {isAutoFilling ? <CircularProgress sx={{marginLeft: 2}} size="16px"/> :  null}</Button>
                             {isLoading && (
                                 <div className='resume-tailor-loader'>
                                     <CircularProgress sx={{ marginRight: 3 }} />
