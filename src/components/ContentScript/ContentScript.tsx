@@ -241,7 +241,8 @@ const ContentScript = () => {
                     try {
                         const inputData: { id: string, value: string }[] = JSON.parse(jsonStringOnly)
                         console.log(inputData)
-                        inputData.forEach((input) => {
+                        inputData.forEach((_input) => {
+                            const input = typeof _input === 'string' ? JSON.parse(_input) : _input
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
                                 const event = new Event('input', { bubbles: true });
@@ -259,7 +260,8 @@ const ContentScript = () => {
                     try {
                         const inputData: { id: string, value: string }[] = JSON.parse(aiResponseRawText)
                         console.log(inputData)
-                        inputData.forEach((input) => {
+                        inputData.forEach((_input) => {
+                            const input = typeof _input === 'string' ? JSON.parse(_input) : _input
                             const element = document.getElementById(input.id) as HTMLInputElement;
                             if (element) {
                                 const event = new Event('input', { bubbles: true });
