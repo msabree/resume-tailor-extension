@@ -1,6 +1,7 @@
 import React from 'react';
 import { CircularProgress } from '@mui/material';
 import Bot from '../../icons/Bot';
+import Markdown from 'react-markdown'
 import '../../index.css';
 
 interface SummaryProps {
@@ -28,7 +29,7 @@ const Summary = ({ summary, errorMessage, isLoading }: SummaryProps) => {
                 </div>
             )}
             {summary && !isLoading && !errorMessage && (
-                <div className='resume-tailor-cover-letter'>{summary}</div>
+                <Markdown>{summary}</Markdown>
             )}
         </div>
     );

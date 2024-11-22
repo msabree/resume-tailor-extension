@@ -305,7 +305,7 @@ const ContentScript = () => {
                 const options = {
                     sharedContext: `This is text from a job listing: ${document.body.innerText}`,
                     type: 'key-points',
-                    format: 'plain-text',
+                    format: 'markdown',
                     length: 'medium',
                 };
 
