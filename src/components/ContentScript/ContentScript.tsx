@@ -31,6 +31,7 @@ const ContentScript = () => {
     const [isAiError, setIsAiError] = useState(false)
     const [summaryError, setSummaryError] = useState('')
     const [summary, setSummary] = useState('')
+    const [funnyNote, setFunnyNote] = useState('')
     const [isLoadError, setIsLoadError] = useState(false)
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
@@ -53,7 +54,7 @@ const ContentScript = () => {
             setIsLoadError(false)
             setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ 
+            const model = genAI.getGenerativeModel({
                 model: AI_MODEL,
                 systemInstruction: `
                 You are given the innerText of a website page. 
@@ -86,12 +87,45 @@ const ContentScript = () => {
         }
     }
 
+    const createFunny = async () => {
+        const ai = (window as any).ai;
+        if ('ai' in window && 'languageModel' in ai) {
+            const capabilities = (await ai.summarizer.capabilities()).available;
+            if (capabilities === 'readily') {
+                const session = await ai.languageModel.create({
+                    systemPrompt: "You are witty and funny and will help we impress a hiring manager.",
+                });
+
+                const result = await session.prompt(`Create a funny note or joke for a hiring manager. Make it short and one sentence. Only return the result. No explanations`);
+                console.log(result, "<-- result")
+                setFunnyNote(result.split('\n')[0])
+            }
+            else if (capabilities === 'after-download') {
+                console.log('AI Prompt API is ready to use after downloading the model.')
+                await ai.languageModel.create({
+                    monitor(m: any) {
+                        m.addEventListener('downloadprogress', (e: any) => {
+                            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+                        });
+                    }
+                });
+                return;
+            }
+            else {
+                console.log('AI Prompt API not available to use. please check your flags in this browser.')
+            }
+        }
+        else {
+            console.log('AI Prompt API not supported in this browser.')
+        }
+    }
+
     const enhanceResume = (resume: string) => {
         if (jobInfo !== "false") {
             setIsAiError(false)
             setIsResumeLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ 
+            const model = genAI.getGenerativeModel({
                 model: AI_MODEL,
                 systemInstruction: `
                 You are given a detailed job description and a resume in HTML format. 
@@ -121,7 +155,7 @@ const ContentScript = () => {
                 console.log(err)
             })
         }
-        else{
+        else {
             checkForJobPosting()
         }
     }
@@ -131,7 +165,7 @@ const ContentScript = () => {
         setIsAiError(false)
         setIsLoading(true)
         const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-        const model = genAI.getGenerativeModel({ 
+        const model = genAI.getGenerativeModel({
             model: AI_MODEL,
             systemInstruction: `
                 You have been provided with a cover letter that contains placeholders (e.g., "[Date]", "[Hiring Manager Name]", "[Company Name]"). Your task is to rewrite the cover letter, removing all placeholders, and generate a more generic version of the cover letter that can be used for any job application. The letter should be professional, polite, and tailored in tone but avoid specifics that were originally placeholders.
@@ -166,7 +200,7 @@ const ContentScript = () => {
         if (jobInfo !== "false" && _resume !== "") {
             setIsCoverLetterLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ 
+            const model = genAI.getGenerativeModel({
                 model: AI_MODEL,
                 systemInstruction: `
                     You are given a job description and a resume in HTML format. Do not use any placeholders. Instead, extract the necessary details from both the job description and the resume and generate a fully customized, professional cover letter in HTML format.
@@ -199,7 +233,7 @@ const ContentScript = () => {
                 console.log(err)
             })
         }
-        else{
+        else {
             checkForJobPosting()
         }
     }
@@ -209,7 +243,7 @@ const ContentScript = () => {
         if (pageInnerHTML && htmlResume !== "") {
             setIsAutoFilling(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ 
+            const model = genAI.getGenerativeModel({
                 model: AI_MODEL,
                 systemInstruction: `
                 You are given the innerHTML of a job listing page, along with a 
@@ -292,16 +326,14 @@ const ContentScript = () => {
         const ai = (window as any).ai;
         setSummaryError('')
         if ('ai' in window && 'summarizer' in ai) {
-            console.log(await ai.summarizer.capabilities())
             const capabilities = (await ai.summarizer.capabilities()).available;
             console.log(capabilities)
-            if(capabilities === 'no'){
+            if (capabilities === 'no') {
                 console.log('AI Summarizer not supported in this browser.')
                 setSummaryError("AI Sumamrizer not supported in  this browser.")
                 return
             }
-            else if(capabilities === 'readily'){
-                console.log('AI Summarizer is ready to use.')
+            else if (capabilities === 'readily') {
                 const options = {
                     sharedContext: `This is text from a job listing: ${document.body.innerText}`,
                     type: 'key-points',
@@ -309,25 +341,25 @@ const ContentScript = () => {
                     length: 'medium',
                 };
 
-                try{
+                try {
                     const summarizer = await ai.summarizer.create(options)
                     const summary = await summarizer.summarize("Summarize it.")
-                    
+
                     console.log(summary)
                     setSummary(summary)
                 }
-                catch(e){}
+                catch (e) { }
             }
-            else if(capabilities === 'after-download'){
+            else if (capabilities === 'after-download') {
                 console.log('AI Summarizer is ready to use after downloading the model.')
                 setSummaryError("AI Sumamrizer needs to download first. Try again shortly...")
                 await ai.summarizer.create({
                     monitor(m: any) {
-                      m.addEventListener('downloadprogress', (e: any) => {
-                        console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
-                      });
+                        m.addEventListener('downloadprogress', (e: any) => {
+                            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+                        });
                     }
-                  });
+                });
                 return;
             }
             else {
@@ -362,13 +394,14 @@ const ContentScript = () => {
                 setHTMLResume(resume)
                 enhanceResume(resume)
                 generateCoverLetter(resume)
+                createFunny()
                 // built in ai here!
-                try{
-                    if(summary === ''){
+                try {
+                    if (summary === '') {
                         summarizeJobPosting()
                     }
                 }
-                catch(e){
+                catch (e) {
                     console.log(e)
                     setSummaryError("AI Sumamrizer not supported in  this browser.")
                 }
@@ -450,7 +483,7 @@ const ContentScript = () => {
                             }}>Copy Text</Button>
                             <Button disabled={enhancedResume === '' || isAutoFilling} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 generateAutofillCommands()
-                            }}>Auto Fill {isAutoFilling ? <CircularProgress sx={{marginLeft: 2}} size="16px"/> :  null}</Button>
+                            }}>Auto Fill {isAutoFilling ? <CircularProgress sx={{ marginLeft: 2 }} size="16px" /> : null}</Button>
                             {isLoading && (
                                 <div className='resume-tailor-loader'>
                                     <CircularProgress sx={{ marginRight: 3 }} />
@@ -481,9 +514,16 @@ const ContentScript = () => {
                         </div>
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <CoverLetterGenerator isLoading={isCoverLetterLoading} coverLetterHTML={coverLetterHTML} errorMessage={isAiError ? 'true' : ''} generateCoverLetter={() => {
-                            generateCoverLetter(htmlResume)
-                        }} />
+                        <CoverLetterGenerator 
+                            isLoading={isCoverLetterLoading} 
+                            coverLetterHTML={coverLetterHTML} 
+                            funnyNote={funnyNote}
+                            errorMessage={isAiError ? 'true' : ''} 
+                            generateCoverLetter={() => {
+                                generateCoverLetter(htmlResume)
+                                createFunny()
+                            }} 
+                        />
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={2}>
                         <Summary isLoading={isLoading} summary={summary} errorMessage={summaryError} />

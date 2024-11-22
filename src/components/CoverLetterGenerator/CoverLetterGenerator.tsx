@@ -8,6 +8,7 @@ import '../../index.css';
 interface CoverLetterGeneratorProps {
     coverLetterHTML?: string
     errorMessage?: string
+    funnyNote?: string
     generateCoverLetter: () => void
     isLoading: boolean
 }
@@ -23,7 +24,7 @@ const copyToClipboard = () => {
         });
 }
 
-const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLetter, isLoading }: CoverLetterGeneratorProps) => {
+const CoverLetterGenerator = ({ coverLetterHTML, funnyNote, errorMessage, generateCoverLetter, isLoading }: CoverLetterGeneratorProps) => {
     return (
         <div>
             <Button disabled={isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginRight: 2 }} onClick={() => {
@@ -36,6 +37,8 @@ const CoverLetterGenerator = ({ coverLetterHTML, errorMessage, generateCoverLett
                 copyToClipboard()
             }}>Copy Text</Button>
             {coverLetterHTML && !isLoading && <div id="__dynamicCoverLetter" className='resume-tailor-cover-letter' dangerouslySetInnerHTML={{ __html: coverLetterHTML }} />}
+            <br></br>
+            {funnyNote && !isLoading && <div className='funny-note'><span className='funny-face'>&#128513;</span>{funnyNote}</div>}
             {!coverLetterHTML && !isLoading && errorMessage && (
                 <div className='resume-tailor-engine-error'>
                     <div>

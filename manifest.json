@@ -22,7 +22,10 @@
         "storage",
         "aiLanguageModelOriginTrial"
     ],
-    "trial_tokens": ["AvWtzg2i18PLY4mWEwPtMGzDH7DwP4r1EnjoX9F9Uj4o6SSYkpDt7ChnVB9HP2VX7MLt4KWyyRl0LclnhMBiyQcAAABzeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2lnbXBub2tibGJpbW5wZmhjaGdwamxkaGRqaXBmZHAiLCJmZWF0dXJlIjoiQUlTdW1tYXJpemF0aW9uQVBJIiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ=="],
+    "trial_tokens": [
+        "AvWtzg2i18PLY4mWEwPtMGzDH7DwP4r1EnjoX9F9Uj4o6SSYkpDt7ChnVB9HP2VX7MLt4KWyyRl0LclnhMBiyQcAAABzeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2lnbXBub2tibGJpbW5wZmhjaGdwamxkaGRqaXBmZHAiLCJmZWF0dXJlIjoiQUlTdW1tYXJpemF0aW9uQVBJIiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ==",
+        "AvMV/GLuamvjEN/ydlr6XWB4O2ZQgpbIZuWtAklZIGjcjtrBnzq5oQNT9JCyIslwIdqsSbJW/g5Pqwla1boVhAwAAAB4eyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2lnbXBub2tibGJpbW5wZmhjaGdwamxkaGRqaXBmZHAiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElGb3JFeHRlbnNpb24iLCJleHBpcnkiOjE3NjA0ODYzOTl9"
+    ],
     "background": {
         "service_worker": "js/background.js"
     },
