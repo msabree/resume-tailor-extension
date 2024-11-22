@@ -14,6 +14,7 @@ The **Resume Tailor** Chrome Extension uses Google Gemini AI to tailor your resu
 ## Features
 
 - Leverages Google Gemini AI to enhance and tailor your resume for specific job descriptions.
+- Leverages Google BUILTIN AI PROMPT API/SUMMARIZER API to enhance cover letter and summarize job posting.
 - Automatically generates a custom CV based on job requirements.
 - Auto-fills application fields when possible, saving you time during the application process.
 - Open-source project – contributions are welcome!
@@ -27,9 +28,9 @@ To test the extension locally, follow these steps:
    git clone git@github.com:msabree/resume-tailor-extension.git
    ```
 
-2. Create a `.env` file in the project root and add your API key:
+2. Create a `.env` file in the project root and add your GEMINI API key:
    ```
-   REACT_APP_AI_API_KEY=<YOUR API KEY HERE>
+   REACT_APP_AI_API_KEY=<YOUR GEMINI API KEY HERE>
    ```
 
 3. Install dependencies and build the project:
