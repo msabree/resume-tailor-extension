@@ -93,7 +93,7 @@ const ContentScript = () => {
             const capabilities = (await ai.summarizer.capabilities()).available;
             if (capabilities === 'readily') {
                 const session = await ai.languageModel.create({
-                    systemPrompt: "You are witty and funny and will help we impress a hiring manager.",
+                    systemPrompt: "You are witty and funny and will help me impress a hiring manager.",
                 });
 
                 const result = await session.prompt(`Create a funny note or joke for a hiring manager. Make it short and one sentence. Only return the result. No explanations`);
