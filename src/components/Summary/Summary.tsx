@@ -25,7 +25,7 @@ const Summary = ({ summary, errorMessage, isLoading }: SummaryProps) => {
             {isLoading && !errorMessage && (
                 <div className='resume-tailor-loader'>
                     <CircularProgress sx={{ marginRight: 3 }} />
-                    Summarizing jon posting... Please wait.
+                    Summarizing job posting... Please wait.
                 </div>
             )}
             {summary && !isLoading && !errorMessage && (
