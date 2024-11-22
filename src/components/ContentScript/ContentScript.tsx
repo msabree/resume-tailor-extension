@@ -36,6 +36,8 @@ const ContentScript = () => {
     const [enhancedResume, setEnhancedResume] = useState<string>('')
     const [coverLetterHTML, setCoverLetterHTML] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
+    const [isResumeLoading, setIsResumeLoading] = useState(false)
+    const [isCoverLetterLoading, setIsCoverLetterLoading] = useState(false)
     const [isAutoFilling, setIsAutoFilling] = useState(false)
     const [open, setOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -87,7 +89,7 @@ const ContentScript = () => {
     const enhanceResume = (resume: string) => {
         if (jobInfo !== "false") {
             setIsAiError(false)
-            setIsLoading(true)
+            setIsResumeLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ 
                 model: AI_MODEL,
@@ -110,12 +112,12 @@ const ContentScript = () => {
             const prompt = `This is the job description: ${jobInfo} and this is the resume: ${resume}`;
 
             model.generateContent(prompt).then((result) => {
-                setIsLoading(false)
+                setIsResumeLoading(false)
                 const rawString = result.response.text().replace("```html", "").replace("```", "");
                 setEnhancedResume(rawString.trim())
             }).catch((err) => {
                 setIsAiError(true)
-                setIsLoading(false)
+                setIsResumeLoading(false)
                 console.log(err)
             })
         }
@@ -162,7 +164,7 @@ const ContentScript = () => {
 
     const generateCoverLetter = (_resume: string) => {
         if (jobInfo !== "false" && _resume !== "") {
-            setIsLoading(true)
+            setIsCoverLetterLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ 
                 model: AI_MODEL,
@@ -183,7 +185,7 @@ const ContentScript = () => {
             const prompt = `This is the job description: ${jobInfo} and this is the resume: ${_resume}`;
 
             model.generateContent(prompt).then((result) => {
-                setIsLoading(false)
+                setIsCoverLetterLoading(false)
                 const rawString = result.response.text().replace("```html", "").replace("```", "");
                 const hasPlaceholders = detectPlaceholders(rawString)
                 if (hasPlaceholders) {
@@ -193,7 +195,7 @@ const ContentScript = () => {
                     setCoverLetterHTML(rawString.trim())
                 }
             }).catch((err) => {
-                setIsLoading(false)
+                setIsCoverLetterLoading(false)
                 console.log(err)
             })
         }
@@ -303,12 +305,18 @@ const ContentScript = () => {
                 const options = {
                     sharedContext: `This is text from a job listing: ${document.body.innerText}`,
                     type: 'key-points',
-                    format: 'html',
+                    format: 'plain-text',
                     length: 'medium',
                 };
 
-                const summary = await ai.summarizer.create(options)
-                setSummary(summary)
+                try{
+                    const summarizer = await ai.summarizer.create(options)
+                    const summary = await summarizer.summarize("Summarize it.")
+                    
+                    console.log(summary)
+                    setSummary(summary)
+                }
+                catch(e){}
             }
             else if(capabilities === 'after-download'){
                 console.log('AI Summarizer is ready to use after downloading the model.')
@@ -356,7 +364,9 @@ const ContentScript = () => {
                 generateCoverLetter(resume)
                 // built in ai here!
                 try{
-                    summarizeJobPosting()
+                    if(summary === ''){
+                        summarizeJobPosting()
+                    }
                 }
                 catch(e){
                     console.log(e)
@@ -429,13 +439,13 @@ const ContentScript = () => {
                     </Box>
                     <CustomTabPanel value={tabIndex} index={0}>
                         <div style={{ padding: 5 }}>
-                            <Button disabled={isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            <Button disabled={isResumeLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 enhanceResume(htmlResume)
                             }}>{enhancedResume === '' ? 'Generate' : 'Regenerate'}</Button>
-                            <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            <Button disabled={enhancedResume === '' || isResumeLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 downloadAsPdf(document.getElementById("__dynamicHTMLResume"))
                             }}>Download as PDF</Button>
-                            <Button disabled={enhancedResume === '' || isLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
+                            <Button disabled={enhancedResume === '' || isResumeLoading} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
                                 copyToClipboard()
                             }}>Copy Text</Button>
                             <Button disabled={enhancedResume === '' || isAutoFilling} color='info' variant='outlined' sx={{ fontSize: 14, textTransform: 'none', marginBottom: 2, marginLeft: 2 }} onClick={() => {
@@ -447,7 +457,7 @@ const ContentScript = () => {
                                     Tailoring your resume to match this job posting... Please wait.
                                 </div>
                             )}
-                            {enhancedResume && !isLoading && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
+                            {enhancedResume && !isResumeLoading && <div id="__dynamicHTMLResume" className='info' dangerouslySetInnerHTML={{ __html: enhancedResume }} />}
                             {!enhancedResume && isAiError && (
                                 <div className='resume-tailor-engine-error'>
                                     <div>
@@ -471,7 +481,7 @@ const ContentScript = () => {
                         </div>
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
-                        <CoverLetterGenerator isLoading={isLoading} coverLetterHTML={coverLetterHTML} errorMessage={isAiError ? 'true' : ''} generateCoverLetter={() => {
+                        <CoverLetterGenerator isLoading={isCoverLetterLoading} coverLetterHTML={coverLetterHTML} errorMessage={isAiError ? 'true' : ''} generateCoverLetter={() => {
                             generateCoverLetter(htmlResume)
                         }} />
                     </CustomTabPanel>

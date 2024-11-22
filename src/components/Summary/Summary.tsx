@@ -28,7 +28,7 @@ const Summary = ({ summary, errorMessage, isLoading }: SummaryProps) => {
                 </div>
             )}
             {summary && !isLoading && !errorMessage && (
-                <div className='resume-tailor-cover-letter' dangerouslySetInnerHTML={{ __html: summary }} />
+                <div className='resume-tailor-cover-letter'>{summary}</div>
             )}
         </div>
     );
