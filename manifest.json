@@ -1,6 +1,7 @@
 {
     "version": "1.0.0",
     "manifest_version": 3,
+    "key": "gigmpnokblbimnpfhchgpjldhdjipfdp",
     "name": "Resume Tailor",
     "description": "Resume Tailor automatically customizes your resume to match any job description and automatically generates a cover letter.",
     "action": {
@@ -18,8 +19,10 @@
         "128": "icons/128x128.png"
     },
     "permissions": [
-        "storage"
+        "storage",
+        "aiLanguageModelOriginTrial"
     ],
+    "trial_tokens": ["AvWtzg2i18PLY4mWEwPtMGzDH7DwP4r1EnjoX9F9Uj4o6SSYkpDt7ChnVB9HP2VX7MLt4KWyyRl0LclnhMBiyQcAAABzeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2lnbXBub2tibGJpbW5wZmhjaGdwamxkaGRqaXBmZHAiLCJmZWF0dXJlIjoiQUlTdW1tYXJpemF0aW9uQVBJIiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ=="],
     "background": {
         "service_worker": "js/background.js"
     },

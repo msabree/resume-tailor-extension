@@ -15,6 +15,7 @@ import { detectPlaceholders } from '../../utils/strings';
 import Bot from '../../icons/Bot';
 import '../../index.css';
 import { AI_MODEL } from '../../constants';
+import Summary from '../Summary/Summary';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -28,6 +29,8 @@ const ContentScript = () => {
     const [top, setTop] = useState(50);
     const [jobInfo, setJobInfo] = useState("false")
     const [isAiError, setIsAiError] = useState(false)
+    const [summaryError, setSummaryError] = useState('')
+    const [summary, setSummary] = useState('')
     const [isLoadError, setIsLoadError] = useState(false)
     const [htmlResume, setHTMLResume] = useState<string>('')
     const [enhancedResume, setEnhancedResume] = useState<string>('')
@@ -282,6 +285,53 @@ const ContentScript = () => {
         }
     }
 
+    // use the Google built in ai to summarize the job posting
+    const summarizeJobPosting = async () => {
+        const ai = (window as any).ai;
+        setSummaryError('')
+        if ('ai' in window && 'summarizer' in ai) {
+            console.log(await ai.summarizer.capabilities())
+            const capabilities = (await ai.summarizer.capabilities()).available;
+            console.log(capabilities)
+            if(capabilities === 'no'){
+                console.log('AI Summarizer not supported in this browser.')
+                setSummaryError("AI Sumamrizer not supported in  this browser.")
+                return
+            }
+            else if(capabilities === 'readily'){
+                console.log('AI Summarizer is ready to use.')
+                const options = {
+                    sharedContext: `This is text from a job listing: ${document.body.innerText}`,
+                    type: 'key-points',
+                    format: 'html',
+                    length: 'medium',
+                };
+
+                const summary = await ai.summarizer.create(options)
+                setSummary(summary)
+            }
+            else if(capabilities === 'after-download'){
+                console.log('AI Summarizer is ready to use after downloading the model.')
+                setSummaryError("AI Sumamrizer needs to download first. Try again shortly...")
+                await ai.summarizer.create({
+                    monitor(m: any) {
+                      m.addEventListener('downloadprogress', (e: any) => {
+                        console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+                      });
+                    }
+                  });
+                return;
+            }
+            else {
+                console.log('AI Summarizer not supported in this browser.')
+                setSummaryError("AI Sumamrizer not supported in  this browser.")
+                return
+            }
+        } else {
+            console.log('AI Summarizer not supported in this browser.')
+            setSummaryError("AI Sumamrizer not supported in  this browser.")
+        }
+    }
 
     const copyToClipboard = () => {
         const innerText = document.getElementById("__dynamicHTMLResume")?.innerText;
@@ -304,6 +354,14 @@ const ContentScript = () => {
                 setHTMLResume(resume)
                 enhanceResume(resume)
                 generateCoverLetter(resume)
+                // built in ai here!
+                try{
+                    summarizeJobPosting()
+                }
+                catch(e){
+                    console.log(e)
+                    setSummaryError("AI Sumamrizer not supported in  this browser.")
+                }
             }).catch((err) => {
                 console.log(err)
             })
@@ -366,6 +424,7 @@ const ContentScript = () => {
                         <Tabs value={tabIndex} onChange={(_evt: any, index: number) => setTabIndex(index)} aria-label="Resume Tailor Tabs">
                             <Tab label="Resume Tailor" sx={{ textTransform: 'none', fontSize: 16 }} />
                             <Tab label="Cover Letter Generator" sx={{ textTransform: 'none', fontSize: 16 }} />
+                            <Tab label="Job Summary" sx={{ textTransform: 'none', fontSize: 16 }} />
                         </Tabs>
                     </Box>
                     <CustomTabPanel value={tabIndex} index={0}>
@@ -415,6 +474,9 @@ const ContentScript = () => {
                         <CoverLetterGenerator isLoading={isLoading} coverLetterHTML={coverLetterHTML} errorMessage={isAiError ? 'true' : ''} generateCoverLetter={() => {
                             generateCoverLetter(htmlResume)
                         }} />
+                    </CustomTabPanel>
+                    <CustomTabPanel value={tabIndex} index={2}>
+                        <Summary isLoading={isLoading} summary={summary} errorMessage={summaryError} />
                     </CustomTabPanel>
                 </Box>
             </Popover>
